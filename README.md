@@ -1,7 +1,7 @@
 #[FGWebImage](https://github.com/Insfgg99x/FGWebImage)
 ..............................................................
 ##Introduction
-An extCategoryension build in Swift 3.0 for UIImageView and A light-weight framework of  async loading image like SDWebImage.
+An Categoryension build in Swift 3.0 for UIImageView and A light-weight framework of  async loading image like SDWebImage.
 ##Installtion
 Manual:
 
