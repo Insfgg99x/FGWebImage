@@ -2,9 +2,16 @@
 ..............................................................
 ##Introduction
 An Categoryension build in Swift 3.0 for UIImageView and A light-weight framework of  async loading image like SDWebImage.
+##Required
+- Swift 3
+- Xcode 8
+- iOS 8
 ##Installtion
-Manual:
-
+-Cocoapods
+```
+pod 'FGWebImage'
+```
+- Manual:
 Download This Project and drag the `FGWebImage` folder into your peroject, do not forget to ensure "copy item if need" being selected.
 
 
