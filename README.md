@@ -8,7 +8,7 @@ An Categoryension build in Swift 3.0 for UIImageView and A light-weight framewor
 - iOS 8
 ##Installtion
 
--Cocoapods
+- Cocoapods
 ```
 pod 'FGWebImage'
 ```
