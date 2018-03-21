@@ -5,8 +5,6 @@
 [![Platform](https://img.shields.io/cocoapods/p/FGWebImage.svg?style=flat)](http://cocoadocs.org/docsets/FGWebImage)
 ![Language](https://img.shields.io/badge/Language-%20Swift%204.0%20-blue.svg)
 
-****
-
 ## Introduction
 A light-weight framework of  async loading image like SDWebImage in Swift.
 
@@ -45,6 +43,4 @@ let url = "http://upload-images.jianshu.io/upload_images/937405-e91a649f7a7df2a0
 imv.fg_setImageWithUrl(url, placeHolderImage)
 ```
 
-****
-
-@CGPoitZero
+## @CGPoitZero
