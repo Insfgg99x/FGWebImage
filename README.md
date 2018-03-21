@@ -1,5 +1,10 @@
 # [FGWebImage](https://github.com/Insfgg99x/FGWebImage)
 
+[![Version](https://img.shields.io/cocoapods/v/FGWebImage.svg?style=flat)](http://cocoadocs.org/docsets/FGWebImage)
+[![License](https://img.shields.io/cocoapods/l/FGWebImage.svg?style=flat)](http://cocoadocs.org/docsets/FGWebImage)
+[![Platform](https://img.shields.io/cocoapods/p/FGWebImage.svg?style=flat)](http://cocoadocs.org/docsets/FGWebImage)
+![Language](https://img.shields.io/badge/Language-%20Swift%204.0%20-blue.svg)
+
 ****
 
 ## Introduction
