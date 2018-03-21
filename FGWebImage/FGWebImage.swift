@@ -15,184 +15,159 @@ import Foundation
 import UIKit
 
 // 7 days max allowed in disk cache
-let fg_maxCacheCycle:TimeInterval = 7*24*3600
-var fg_imagUrlStringKey="fg_imagUrlStringKey"
-var fg_diskCatahPathNameKey = "fg_diskCatahPathNameKey"
-let fg_imageCache=NSCache<AnyObject,AnyObject>()
-let fg_diskCachePath=NSSearchPathForDirectoriesInDomains(.libraryDirectory, .userDomainMask, true).last!+"/FGGAutomaticScrollViewCache"
+private let fg_maxCacheCycle:TimeInterval = 7*24*3600
+private var fg_imagUrlStringKey="fg_imagUrlStringKey"
+private var fg_diskCatahPathNameKey = "fg_diskCatahPathNameKey"
+private let fg_imageCache=NSCache<AnyObject,AnyObject>()
+private let fg_diskCachePath=NSSearchPathForDirectoriesInDomains(.libraryDirectory, .userDomainMask, true).last!+"/FGGAutomaticScrollViewCache"
 
-extension UIImageView{
-    
-    public func clearMermeryCache(){
-        
+public extension UIImageView {
+    public func clearMermeryCache() {
         fg_imageCache.removeAllObjects()
     }
-    public func clearDiskCache(){
-        
-        let files=FileManager.default.subpaths(atPath: fg_diskCachePath)
-        if files == nil {
+    public func clearDiskCache() {
+        guard let files=FileManager.default.subpaths(atPath: fg_diskCachePath) else {
             return
         }
-        if files?.count==0{
+        guard files.count > 0 else {
             return
         }
-        for file in files!{
+        for file in files {
             do {
                 try FileManager.default.removeItem(atPath: file)
-            }catch{
+            } catch {
                 
             }
         }
-        
     }
-    public func fg_setImageWithUrl(urlString:String?,placeHolder:UIImage?){
-        
-        objc_setAssociatedObject(self, &fg_imagUrlStringKey, urlString,.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-        
-        self.createLoacalCacheFolder(path: fg_diskCachePath)
-        self.image=placeHolder
-        if urlString==nil{
+    public func fg_setImageWithUrl(_ urlString:String?,_ placeHolder:UIImage?) {
+        self.image = placeHolder
+        guard let link = urlString else {
             return
         }
-        var cachePath=fg_diskCachePath+"/"+String(describing: urlString?.hash)
+        objc_setAssociatedObject(self, &fg_imagUrlStringKey, link,.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        self.createLoacalCacheFolder(path: fg_diskCachePath)
+        var cachePath=fg_diskCachePath + "/\(link.hash)"
         objc_setAssociatedObject(self, &fg_diskCatahPathNameKey, cachePath, .OBJC_ASSOCIATION_COPY_NONATOMIC)
-        if (urlString?.hasPrefix("file://"))!{//local path
-            cachePath=urlString!
+        if link.hasPrefix("file://") {//local path
+            cachePath = link
         }
         //check the memery chache exist or not(both local and web images)
-        var data=fg_imageCache.object(forKey: cachePath as AnyObject)
-        if (data != nil) {//exist in memery cache
-            
-            DispatchQueue.main.async{
-                self.image=UIImage(data: data as! Data)
+        var data = fg_imageCache.object(forKey: cachePath as AnyObject) as? Data
+        if data != nil {
+            DispatchQueue.main.async {
+                self.image = UIImage(data: data!)
             }
-        }else{//not in memery cache,check if exist in disk or not
+        } else {//not in memery cache,check if exist in disk or not
             //local images
-            if (urlString?.hasPrefix("file://"))!{
-                
-                let url:NSURL=NSURL.init(string: urlString!)!
-                do{
-                    try data=Data.init(contentsOf: url as URL) as AnyObject?
-                }catch{
-                    
+            if (link.hasPrefix("file://")) {
+                if let url = URL.init(string: link) {
+                    do{
+                        data = try Data.init(contentsOf: url)
+                    } catch {
+                        
+                    }
                 }
                 //if local image exist
-                if data != nil{
-                    
-                    fg_imageCache.setObject(data as AnyObject, forKey: cachePath as AnyObject)
-                    DispatchQueue.main.async{
-                        self.image=UIImage(data: data as! Data)
+                if data != nil {
+                    fg_imageCache.setObject(data! as AnyObject, forKey: cachePath as AnyObject)
+                    DispatchQueue.main.async {
+                        self.image = UIImage(data: data!)
                     }
                 }
                 else{//local image is not exist,just ingnore
                     //ingnore
                 }
-            }
-                //web images
-            else{
+            } else {//web images
                 //check if exist in disk
                 let exist=FileManager.default.fileExists(atPath: cachePath)
                 if exist {//exist in disk
                     //check if expired
                     var attributes:Dictionary<FileAttributeKey,Any>?
-                    do{
+                    do {
                         try attributes=FileManager.default.attributesOfItem(atPath: cachePath)
-                    }catch{
+                    } catch {
                         
                     }
-                    let createDate:Date?=attributes?[FileAttributeKey.creationDate] as! Date?
-                    let interval:TimeInterval?=Date.init().timeIntervalSince(createDate!)
-                    let expired=(interval! > fg_maxCacheCycle)
-                    if expired{//expired
+                    let createDate = attributes?[FileAttributeKey.creationDate] as! Date
+                    let interval = Date.init().timeIntervalSince(createDate)
+                    let expired=(interval > fg_maxCacheCycle)
+                    if expired {//expired
                         //download image
                         self.donwloadDataAndRefreshImageView()
-                    }
-                    else{//not expired
+                    } else {//not expired
                         //load from disk
-                        let url:NSURL=NSURL.init(string: urlString!)!
-                        do{
-                            try data=Data.init(contentsOf: url as URL) as AnyObject?
-                        }catch{
-                            
-                        }
-                        if data != nil{//if has data
-                            //cached in memery
-                            fg_imageCache.setObject(data as AnyObject, forKey: cachePath as AnyObject)
-                            DispatchQueue.main.async{
-                                self.image=UIImage(data: data as! Data)
-                            }
-                        }
-                        else{//has not data
-                            //remove item from disk
-                            let url:NSURL=NSURL.init(string: urlString!)!
-                            do{
-                                try data=Data.init(contentsOf: url as URL) as AnyObject?
-                            }catch{
+                        if let url = URL.init(string: link) {
+                            do {
+                                data = try Data.init(contentsOf: url)
+                            } catch {
                                 
                             }
-                            //donwload agin
+                        }
+                        if data != nil {//if has data
+                            //cached in memery
+                            fg_imageCache.setObject(data! as AnyObject, forKey: cachePath as AnyObject)
+                            DispatchQueue.main.async {
+                                self.image=UIImage(data: data!)
+                            }
+                        } else{//has not data
+                            //donwload
                             self.donwloadDataAndRefreshImageView()
                         }
                     }
-                }
-                    //not exist in disk
-                else{
+                } else {//not exist in disk
                     //download image
                     self.donwloadDataAndRefreshImageView()
                 }
             }
         }
     }
+}
+private extension UIImageView {
+    //MARK:create a cache area to cache web images
+    private func createLoacalCacheFolder(path:String) {
+        if !FileManager.default.fileExists(atPath: path) {
+            do {
+                try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true, attributes: nil)
+                
+            } catch {
+                
+            }
+        }
+    }
+}
+private extension UIImageView {
     //async download image
-    private func donwloadDataAndRefreshImageView(){
-        
-        let urlString:String?=objc_getAssociatedObject(self, &fg_imagUrlStringKey) as? String
-        if(urlString==nil){
+    private func donwloadDataAndRefreshImageView() {
+        guard let link = objc_getAssociatedObject(self, &fg_imagUrlStringKey) as? String else {
             return
         }
-        let cachePath:String?=objc_getAssociatedObject(self, &fg_diskCatahPathNameKey) as? String
-        if(cachePath != nil){
-            
-            do{
+        let cachePath = objc_getAssociatedObject(self, &fg_diskCatahPathNameKey) as? String
+        if cachePath != nil {
+            do {
                 try FileManager.default.removeItem(atPath: cachePath!)
-            }catch{
+            } catch {
                 
             }
         }
         //download data
-        let url=URL.init(string: urlString!)
-        if url == nil{
+        guard let url=URL.init(string: link) else {
             return
         }
-        let session=URLSession.shared.dataTask(with: url!, completionHandler: { (resultData, res, err) in
+        URLSession.shared.dataTask(with: url, completionHandler: { (resultData, _, _) in
+            guard let data =  resultData  else {
+                return
+            }
             let fileUrl=URL.init(fileURLWithPath: cachePath!)
-            do{
-                try resultData?.write(to: fileUrl, options:.atomic)
-            }catch{
+            do {
+                try data.write(to: fileUrl, options:.atomic)
+            } catch {
                 
             }
-            fg_imageCache.setObject(resultData as AnyObject, forKey: cachePath as AnyObject)
-            if resultData != nil{
-                DispatchQueue.main.async{
-                    self.image=UIImage(data: resultData!)
-                }
+            fg_imageCache.setObject(data as AnyObject, forKey: cachePath as AnyObject)
+            DispatchQueue.main.async{
+                self.image=UIImage(data: data)
             }
-            else{
-                //ingnore
-            }
-        })
-        session.resume()
-    }
-    //MARK:create a cache area to cache web images
-    private func createLoacalCacheFolder(path:String){
-        
-        if !FileManager.default.fileExists(atPath: path){
-            do{
-                try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true, attributes: nil)
-                
-            }catch{
-                
-            }
-        }
+        }).resume()
     }
 }
